@@ -1,6 +1,5 @@
 import argparse
 import socket
-import subprocess
 import os
 
 # Setup arg passing
