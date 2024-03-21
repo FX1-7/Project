@@ -55,4 +55,7 @@ while validTargetIP is False:
 
 command = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\output.txt"
 
-os.system(command)
+try:
+    os.system(command)
+except KeyError as e:
+    print(f"There was an error: {e}")
