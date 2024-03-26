@@ -1,2 +1,3 @@
+privilege::debug
 token::elevate
 lsadump::sam
