@@ -108,34 +108,26 @@ def process_secrets_dump(filepath):
 
             if sam_flag:
                 sam_hashes.append(line.strip())
-                print("appended SAM")
             elif lsa_flag:
                 lsa_hashes.append(line.strip())
-                print("appended LSA")
             elif domain_flag:
                 domain_hashes.append(line.strip())
-                print("appended DOMAIN")
             elif kerberos_flag:
                 kerberos_info.append(line.strip())
-                print("appended KERBEROS")
     try:
         with open('./output.txt', 'w') as of:
             of.write("Local SAM Hashes:\n")
             for hash in sam_hashes:
                 of.write(f"{hash}\n")
-                print(f"{hash}")
             of.write("\nLSA Secrets:\n")
             for lsahash in lsa_hashes:
                 of.write(f"{lsahash}\n")
-                print(f"{lsahash}")
             of.write("\nDomains:\n")
             for domainhash in domain_hashes:
                 of.write(f"{domainhash}\n")
-                print(f"{domainhash}")
             of.write("\nKerberos keys:\n")
             for key in kerberos_info:
                 of.write(f"{key}\n")
-                print(f"{key}")
     except Exception as e:
         print(f"Error: {e}")
 
