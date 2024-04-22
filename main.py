@@ -34,7 +34,7 @@ def get_domain_name(filepath):
             for line in f:
                 if "DNS Domain Name" in line:
                     extra, full_domain_name = line.split(':', 1)
-                    full_domain_name = domain_name.strip()
+                    full_domain_name = full_domain_name.strip()
                     break
     except FileNotFoundError:
         print("NTML Output file not found.")
